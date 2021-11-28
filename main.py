@@ -149,26 +149,31 @@ async def on_message(message):
 
     # music commands
     if message.content.lower().startswith('~play ') or message.content.lower().startswith('~p '):
-        user = message.author
-        channel = message.author.voice.channel
-        call = message.content.split(" ")[0]
-        url = message.content.replace(call + " ","")
-        voice_client = None
-        for vc in client.voice_clients:
-            if vc.guild.id == message.guild.id:
-                voice_client = vc
-        if not voice_client:
-            voice_client = await channel.connect()
-        
-        is_playing = voice_client.is_playing()
-        player = await YTDLSource.from_url(url, loop=None, isPlaying=is_playing)
-        if(not is_playing):
-            voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+        if not message.author.voice:
+            await message.channel.send("You're not in a voice channel!")
+        else:
+            user = message.author
+            channel = message.author.voice.channel
+            call = message.content.split(" ")[0]
+            url = message.content.replace(call + " ","")
+            voice_client = None
+            for vc in client.voice_clients:
+                if vc.guild.id == message.guild.id:
+                    voice_client = vc
+            if not voice_client:
+                voice_client = await channel.connect()
+            
+            is_playing = voice_client.is_playing()
+            player = await YTDLSource.from_url(url, loop=None, isPlaying=is_playing)
+            if(not is_playing):
+                voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
       
     if message.content.lower().startswith('~leave') or message.content.lower().startswith('~dc'):
-        queue.clear()
+        if not client.voice_clients:
+            await message.channel.send("I'm not in a voice channel right now!")
         for vc in client.voice_clients:
             if vc.guild.id == message.guild.id:
+                queue.clear()
                 await vc.disconnect()
             else:
                 await message.channel.send("I'm not in a voice channel right now!")
